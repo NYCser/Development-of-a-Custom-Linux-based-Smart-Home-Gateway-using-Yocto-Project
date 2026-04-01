@@ -1,0 +1,28 @@
+# SmartHome Gateway - Python Dependencies
+# Dành cho chạy Native trên Raspberry Pi (không dùng Docker)
+
+# MQTT & Message Bus
+paho-mqtt==1.6.1
+redis==5.0.0
+
+# Web API & WebSocket
+Flask==3.0.0
+Flask-SocketIO==5.3.5
+python-socketio==5.9.0
+python-engineio==4.7.1
+
+# Werkzeug (dependency for Flask)
+Werkzeug==3.0.1
+
+# System utilities (built-in, nhưng liệt kê cho references)
+# sqlite3    <- built-in
+# subprocess <- built-in
+# threading  <- built-in
+# json       <- built-in
+# csv        <- built-in
+# os, sys    <- built-in
+
+# Optional: Raspberry Pi Hardware (SD Card)
+# adafruit-circuitpython-busdevice>=5.2.0
+# adafruit-circuitpython-sdcard>=2.0.0
+# (These may need direct installation if CircuitPython is used)

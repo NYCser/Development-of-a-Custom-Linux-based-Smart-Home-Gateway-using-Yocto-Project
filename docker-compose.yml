@@ -1,0 +1,163 @@
+version: "3.8"
+
+# ═══════════════════════════════════════════════════════════
+# SmartHome Local Stack - Raspberry Pi
+# Không cần Internet / Firebase / MongoDB
+# ═══════════════════════════════════════════════════════════
+#
+# Cấu trúc:
+#   mqtt       → Eclipse Mosquitto (MQTT Broker)
+#   redis      → Redis (cache + pubsub)
+#   gateway    → gateway_service/main.py  (MQTT → SQLite + Redis)
+#   api        → api_service/main.py      (Flask + SocketIO)
+#   web        → Nginx serve web-interface
+#
+# Khởi động: docker compose up -d
+# Xem log:   docker compose logs -f gateway
+# ═══════════════════════════════════════════════════════════
+
+services:
+
+  # ──────────────────────────────────────────────
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: smarthome_mqtt
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"   # WebSocket MQTT (optional)
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - smarthome_net
+
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: smarthome_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    networks:
+      - smarthome_net
+
+  # ──────────────────────────────────────────────
+  gateway:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: smarthome_gateway
+    restart: always
+    depends_on:
+      - mqtt
+      - redis
+    environment:
+      - MQTT_BROKER=mqtt
+      - REDIS_HOST=redis
+      - DB_PATH=/data/smarthome.db
+    volumes:
+      - db_data:/data                # SQLite database
+      - /run/dbus:/run/dbus          # Để nmcli hoạt động
+    # Cần privileged để dùng nmcli (WiFi management)
+    privileged: true
+    network_mode: host               # Cần host để hotspot hoạt động
+    # Nếu không dùng WiFi management, bỏ privileged + network_mode
+    # và thêm lại: networks: - smarthome_net
+
+  # ──────────────────────────────────────────────
+  api:
+    build:
+      context: ./api-service
+      dockerfile: Dockerfile
+    container_name: smarthome_api
+    restart: always
+    depends_on:
+      - mqtt
+      - redis
+    ports:
+      - "5000:5000"
+    environment:
+      - MQTT_BROKER=mqtt
+      - REDIS_HOST=redis
+      - DB_PATH=/data/smarthome.db
+    volumes:
+      - db_data:/data
+      - firmware_data:/firmware
+    networks:
+      - smarthome_net
+
+  # ──────────────────────────────────────────────
+  web:
+    image: nginx:alpine
+    container_name: smarthome_web
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./web-interface:/usr/share/nginx/html:ro
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+    networks:
+      - smarthome_net
+
+# ──────────────────────────────────────────────
+volumes:
+  db_data:
+  redis_data:
+  mosquitto_data:
+  mosquitto_log:
+  firmware_data:
+
+networks:
+  smarthome_net:
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════
+# HƯỚNG DẪN TẠO FILE CẤU HÌNH
+# ═══════════════════════════════════════════════════════════
+#
+# 1. config/mosquitto.conf:
+#    listener 1883
+#    allow_anonymous true
+#    persistence true
+#    persistence_location /mosquitto/data/
+#
+# 2. config/nginx.conf:
+#    server {
+#        listen 80;
+#        root /usr/share/nginx/html;
+#        index index.html;
+#        location /api/ {
+#            proxy_pass http://api:5000;
+#            proxy_http_version 1.1;
+#            proxy_set_header Upgrade $http_upgrade;
+#            proxy_set_header Connection "upgrade";
+#        }
+#        location /socket.io/ {
+#            proxy_pass http://api:5000;
+#            proxy_http_version 1.1;
+#            proxy_set_header Upgrade $http_upgrade;
+#            proxy_set_header Connection "upgrade";
+#        }
+#    }
+#
+# 3. gateway-service/Dockerfile & api-service/Dockerfile:
+#    FROM python:3.11-slim
+#    WORKDIR /app
+#    COPY requirements.txt .
+#    RUN pip install -r requirements.txt
+#    COPY . .
+#    CMD ["python", "main.py"]
+#
+# 4. requirements.txt (cho cả 2 service):
+#    flask==3.0.0
+#    flask-socketio==5.3.6
+#    paho-mqtt==1.6.1
+#    redis==5.0.1
+#    eventlet==0.35.1
