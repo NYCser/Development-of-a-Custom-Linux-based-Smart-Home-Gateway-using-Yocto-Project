@@ -35,7 +35,7 @@ hostname -I
 
 - `safety_watchdog.py` - ⚠️ Gas/Fire detection (priority)
 - `automation_engine.py` - Logic & scheduling
-- `data_syncer.py` - SQLite + SD card backup
+- `data_syncer.py` - Daily SQLite files on SD2 + Redis buffer/event persistence
 - `network_watchdog.py` - WiFi + RTC + Hotspot
 
 ## 📖 Full Guide

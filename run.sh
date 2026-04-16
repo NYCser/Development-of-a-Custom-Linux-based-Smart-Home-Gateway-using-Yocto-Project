@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 
 # Check if venv exists
 if [ ! -d "venv" ]; then
-    echo "❌ Virtual environment not found!"
+    echo " Virtual environment not found!"
     echo "Please run setup.sh first:"
     echo ""
     echo "  bash setup.sh"
@@ -26,7 +26,7 @@ source venv/bin/activate
 
 # Check if requirements are installed
 if ! python3 -c "import redis, paho.mqtt, flask, flask_socketio" 2>/dev/null; then
-    echo "❌ Some Python packages are missing!"
+    echo "Some Python packages are missing!"
     echo "Installing from requirements.txt..."
     pip install -r requirements.txt
 fi

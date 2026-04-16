@@ -1,0 +1,16 @@
+[Unit]
+Description=Mount External Storage SD2 (%I)
+DefaultDependencies=no
+Requires=dev-%i.device
+After=dev-%i.device
+Wants=systemd-fsck-root.service
+
+[Mount]
+What=/dev/%I1
+Where=/mnt/sd2
+Type=auto
+Options=rw,uid=1000,gid=1000,nofail
+TimeoutSec=10
+
+[Install]
+WantedBy=local-fs.target

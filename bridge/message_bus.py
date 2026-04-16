@@ -22,8 +22,9 @@ REDIS_HOST     = "localhost"
 MQTT_TOPIC_SUB = "home/+/+"          # home/{room}/{category}
 
 # Channels Redis nội bộ
-CH_INBOUND  = "mqtt_inbound"         # MQTT → các worker đọc
-CH_OUTBOUND = "mqtt_outbound"        # Các worker viết → MQTT
+CH_INBOUND    = "mqtt_inbound"         # MQTT → các worker đọc
+CH_OUTBOUND   = "mqtt_outbound"        # Các worker viết → MQTT
+EVENT_QUEUE   = "event_queue"         # Persist event logs for SQLite
 
 
 class MessageBus:
@@ -130,8 +131,13 @@ class MessageBus:
         self.r.publish(CH_OUTBOUND, json.dumps({"topic": topic, "payload": payload}))
 
     def publish_event(self, channel: str, data: dict):
-        """Phát sự kiện lên Redis channel."""
-        self.r.publish(channel, json.dumps(data))
+        """Phát sự kiện lên Redis channel và ghi vào queue persistence."""
+        payload = json.dumps(data)
+        self.r.publish(channel, payload)
+        try:
+            self.r.rpush(EVENT_QUEUE, payload)
+        except Exception as e:
+            print(f"[BUS] event queue write failed: {e}")
 
     def get_redis(self) -> redis.Redis:
         return self.r

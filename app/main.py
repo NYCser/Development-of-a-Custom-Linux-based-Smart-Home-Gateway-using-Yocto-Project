@@ -4,5 +4,5 @@ from flask_socketio import SocketIO
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'smarthome-gateway'
 
-# Cho phép bất kỳ CORS nào để UI local file (http://127.0.0.1:5500) có thể truy cập API
-socketio = SocketIO(app, cors_allowed_origins='*')
+# Khởi tạo SocketIO với quyền truy cập CORS rộng rãi cho realtime dashboard
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')

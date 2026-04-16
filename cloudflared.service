@@ -1,0 +1,33 @@
+[Unit]
+Description=Cloudflare Tunnel - SmartHome Gateway Public API
+Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/
+After=network.target gateway.service
+Wants=gateway.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/GATEWAY
+
+# Start cloudflared tunnel
+ExecStart=/usr/local/bin/cloudflared tunnel run smarthome-gateway
+
+# Auto-restart on failure
+Restart=always
+RestartSec=10
+
+# Process management
+KillMode=process
+TimeoutStopSec=10
+
+# Logging
+StandardOutput=append:/var/log/cloudflared.log
+StandardError=append:/var/log/cloudflared.log
+
+# Environment
+Environment="CLOUDFLARED_ORIGIN_CERT=/home/pi/.cloudflared/cert.pem"
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target

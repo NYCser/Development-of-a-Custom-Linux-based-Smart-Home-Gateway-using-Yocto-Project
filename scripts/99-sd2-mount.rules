@@ -1,0 +1,7 @@
+# udev rule để tự động mount USB/SD2 card
+# Lưu file này và chạy: sudo udevadm control --reload-rules
+
+ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", TAG+="systemd", ENV{SYSTEMD_MOUNT_WANT}="/mnt/sd2"
+
+ACTION=="add", KERNEL=="sd[a-z]*", SUBSYSTEMS=="usb", RUN+="/usr/bin/systemctl start sd2-mount@%k.service"
+ACTION=="remove", KERNEL=="sd[a-z]*", RUN+="/usr/bin/systemctl stop sd2-mount@%k.service"

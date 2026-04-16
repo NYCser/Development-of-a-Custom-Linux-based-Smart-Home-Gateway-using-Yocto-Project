@@ -14,9 +14,10 @@ from werkzeug.utils import secure_filename
 import redis as redis_lib
 import paho.mqtt.client as mqtt_lib
 
-DB_PATH       = os.getenv("DB_PATH",     "/data/smarthome.db")
-REDIS_HOST    = os.getenv("REDIS_HOST",  "localhost")
-MQTT_BROKER   = os.getenv("MQTT_BROKER", "localhost")
+DB_PATH        = os.getenv("DB_PATH",     "/data/smarthome.db")
+DATA_DB_DIR    = os.getenv("DATA_DB_DIR", "/mnt/sd2/data")
+REDIS_HOST     = os.getenv("REDIS_HOST",  "localhost")
+MQTT_BROKER    = os.getenv("MQTT_BROKER", "localhost")
 SESSION_EXPIRE = 86400
 UPLOAD_FOLDER  = os.getenv("UPLOAD_FOLDER", "./firmware")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -32,6 +33,20 @@ except Exception:
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn
+
+
+def get_daily_db_path(date_str: str):
+    return os.path.join(DATA_DB_DIR, f"data_{date_str}.db")
+
+
+def open_daily_db(date_str: str):
+    path = get_daily_db_path(date_str)
+    if not os.path.isfile(path):
+        return None
+    conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     return conn
@@ -640,6 +655,47 @@ def sd2_status():
         if os.path.isfile(db_p):
             db_sz = round(os.path.getsize(db_p)/1024, 1)
     return jsonify({"mounted":is_ok,"backup_db_size_kb":db_sz,"recent_exports":files})
+
+@system_bp.route("/api/data")
+def daily_data():
+    date_param  = request.args.get("date", "")
+    dates_param = request.args.get("dates", "")
+    data_type   = request.args.get("type", "sensor").lower()
+    table_map   = {"sensor": "sensor_data", "event": "system_events", "events": "system_events"}
+    table_name  = table_map.get(data_type)
+    if not table_name:
+        return jsonify({"error":"type must be sensor or event"}), 400
+
+    requested_dates = []
+    if dates_param:
+        requested_dates = [d.strip() for d in dates_param.split(",") if d.strip()]
+    elif date_param:
+        requested_dates = [date_param.strip()]
+    else:
+        return jsonify({"error":"date or dates parameter is required"}), 400
+
+    result = []
+    for date_str in requested_dates:
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            continue
+
+        conn = open_daily_db(date_str)
+        if not conn:
+            continue
+
+        try:
+            rows = conn.execute(f"SELECT * FROM {table_name} ORDER BY timestamp ASC").fetchall()
+            for row in rows:
+                item = dict(row)
+                item["date"] = date_str
+                result.append(item)
+        finally:
+            conn.close()
+
+    result.sort(key=lambda x: x.get("timestamp") or "")
+    return jsonify({"items": result, "count": len(result), "dates": requested_dates})
 
 @system_bp.route("/api/sd2/export_now", methods=["POST"])
 @require_auth
