@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ensure Hotspot Active</title>
+</head>
+<body>
+<center>
+  <div class="tefcha">
+  # Ensure hotspot for Smart Home Gateway
+
+  Start\nEnsure Hotspot Active
+
+  Delete old hotspot connection
+
+  Create WiFi connection
+  Set interface = wlan0
+  Set SSID = SmartHome_Hub
+  Enable autoconnect
+
+  Configure AP mode
+  Set wireless mode = ap
+  Set band = 2.4GHz
+  Set channel = 6
+
+  Remove WiFi security
+  Open network
+
+  Configure static IP
+  IP = 10.42.0.1/24
+  IPv4 method = manual
+
+  Set high priority
+  Autoconnect priority = 100
+
+  Activate hotspot
+
+  End\nHotspot Ready
+  </div>
+</center>
+<script src="https://unpkg.com/tefcha/umd/tefcha.js"></script>
+<script>
+  tefcha.initialize();
+</script>
+
+</body>
+</html>

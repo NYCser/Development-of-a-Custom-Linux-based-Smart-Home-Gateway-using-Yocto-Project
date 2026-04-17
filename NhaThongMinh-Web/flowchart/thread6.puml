@@ -1,0 +1,23 @@
+@startuml
+title RFID / Access Control Flow
+
+actor "ESP32" as ESP
+participant "MQTT Broker" as MQTT
+participant "Gateway MQTT" as GW
+participant "DB Executor" as EXEC
+participant "Firebase" as FB
+
+ESP -> MQTT : Publish auth data
+MQTT -> GW : on_message()
+
+GW -> GW : Check CACHED_RFID_CARDS
+
+alt Valid
+GW -> MQTT : Publish open_door
+else Invalid
+GW -> MQTT : Publish access_denied
+end
+
+GW -> EXEC : Save access log
+EXEC -> FB : Write access_logs
+@enduml

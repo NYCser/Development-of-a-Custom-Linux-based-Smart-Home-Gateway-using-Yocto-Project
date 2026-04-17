@@ -1,0 +1,16 @@
+@startuml
+title Device Status Feedback Flow
+
+actor "ESP32" as ESP
+participant "MQTT Broker" as MQTT
+participant "Gateway MQTT" as GW
+participant "DB Executor" as EXEC
+participant "Firebase" as FB
+
+ESP -> MQTT : Publish device status
+MQTT -> GW : on_message()
+
+GW -> GW : Update CACHED_DEVICE_STATES
+GW -> EXEC : submit(_task_update_status)
+EXEC -> FB : Update device state
+@enduml

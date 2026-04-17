@@ -1,0 +1,25 @@
+@startuml
+title Sensor Data Flow – gateway_mqtt.py
+
+actor "ESP32" as ESP
+participant "MQTT Broker" as MQTT
+participant "Gateway MQTT" as GW
+participant "Automation Engine" as AUTO
+participant "DB Executor" as EXEC
+participant "Firebase" as FB
+participant "MongoDB" as MONGO
+
+ESP -> MQTT : Publish sensors data
+MQTT -> GW : on_message()
+
+GW -> GW : Update CACHED_SENSORS
+GW -> AUTO : process(sensor_data)
+
+AUTO -> MQTT : Publish command (if triggered)
+
+alt DB_WRITE_INTERVAL reached
+GW -> EXEC : submit(_task_update_sensors)
+EXEC -> FB : Update realtime & history
+EXEC -> MONGO : Insert sensor_readings
+end
+@enduml

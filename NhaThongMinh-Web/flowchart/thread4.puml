@@ -1,0 +1,12 @@
+@startuml
+title Scheduler Automation Flow
+
+participant "Scheduler Thread" as SCHED
+participant "Gateway MQTT" as GW
+participant "MQTT Broker" as MQTT
+participant "Firebase" as FB
+
+SCHED -> GW : scheduler_worker()
+GW -> MQTT : Publish scheduled command
+GW -> FB : Delete executed schedule
+@enduml
