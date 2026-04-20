@@ -13,44 +13,44 @@ echo "════════════════════════�
 
 # ── Step 1: Update system packages ────────────────────────────────────
 
-echo ""
-echo "[Step 1] Updating system packages..."
+# echo ""
+# echo "[Step 1] Updating system packages..."
 
-sudo apt update
-sudo apt install -y \
-  python3 python3-venv python3-pip \
-  build-essential libssl-dev libffi-dev python3-dev \
-  mosquitto mosquitto-clients \
-  redis-server redis-tools \
-  network-manager \
-  git curl wget netcat-openbsd
+# sudo apt update
+# sudo apt install -y \
+#   python3 python3-venv python3-pip \
+#   build-essential libssl-dev libffi-dev python3-dev \
+#   mosquitto mosquitto-clients \
+#   redis-server redis-tools \
+#   network-manager \
+#   git curl wget netcat-openbsd
 
 # ── Step 2: Create/activate venv ──────────────────────────────────────
 
-echo ""
-echo "[Step 2] Setting up Python virtual environment..."
+# echo ""
+# echo "[Step 2] Setting up Python virtual environment..."
 
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
-    echo "✓ Created new venv"
-else
-    echo "✓ venv already exists"
-fi
+# if [ ! -d "venv" ]; then
+#     python3 -m venv venv
+#     echo "✓ Created new venv"
+# else
+#     echo "✓ venv already exists"
+# fi
 
-source venv/bin/activate
+# source venv/bin/activate
 
 # ── Step 3: Install Python dependencies ───────────────────────────────
 
+# echo ""
+# echo "[Step 3] Installing Python dependencies..."
+
+# pip install --upgrade pip setuptools wheel
+# pip install -r requirements.txt
+
+# ── Step 1: Setup services ────────────────────────────────────────────
+
 echo ""
-echo "[Step 3] Installing Python dependencies..."
-
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-
-# ── Step 4: Setup services ────────────────────────────────────────────
-
-echo ""
-echo "[Step 4] Setting up system services (MQTT & Redis)..."
+echo "[Step 1] Setting up system services (MQTT & Redis)..."
 
 # Mosquitto
 sudo systemctl unmask mosquitto || true
@@ -63,20 +63,20 @@ sudo systemctl restart redis-server
 
 echo "✓ Services started"
 
-# ── Step 5: Create data directory ─────────────────────────────────────
+# ── Step 2: Create data directory ─────────────────────────────────────
 
 echo ""
-echo "[Step 5] Creating data directory..."
+echo "[Step 2] Creating data directory..."
 
 sudo mkdir -p /data
 sudo chown $USER:$USER /data
 chmod 755 /data
 
 echo "✓ Data directory ready: /data"
-# ── Step 5B: Setup SD2 USB Mount ──────────────────────────────────
+# ── Step 2B: Setup SD2 USB Mount ──────────────────────────────────
 
 echo ""
-echo "[Step 5B] Setting up External Storage (SD2) mount..."
+echo "[Step 2B] Setting up External Storage (SD2) mount..."
 
 # Create mount point
 sudo mkdir -p /mnt/sd2
@@ -96,10 +96,10 @@ sudo systemctl daemon-reload
 echo "✓ SD2 auto-mount configured"
 echo "  Mount point: /mnt/sd2"
 echo "  To manually mount: sudo ./scripts/mount_sd2.sh"
-# ── Step 6: Test connections ─────────────────────────────────────────
+# ── Step 3: Test connections ─────────────────────────────────────────
 
 echo ""
-echo "[Step 6] Testing service connections..."
+echo "[Step 3] Testing service connections..."
 
 ### MQTT TEST (CORRECT WAY)
 echo "- Testing MQTT..."
@@ -139,7 +139,7 @@ else
     echo "✗ Redis failed"
 fi
 
-# ── Step 7: Done ─────────────────────────────────────────────────────
+# ── Step 4: Done ─────────────────────────────────────────────────────
 
 echo ""
 echo "════════════════════════════════════════════════════════════════════"
@@ -157,5 +157,5 @@ echo "  Redis → redis-cli MONITOR"
 echo ""
 echo "════════════════════════════════════════════════════════════════════"
 
-deactivate
+# deactivate
 

@@ -11,7 +11,7 @@
 # ═══════════════════════════════════════════════════════════════════
 
 # Tunnel name (should match: cloudflared tunnel create <name>)
-tunnel: smarthome-gateway
+tunnel: nhathongminh
 
 # Credentials file path
 # cloudflared login creates: ~/.cloudflared/<UUID>.json

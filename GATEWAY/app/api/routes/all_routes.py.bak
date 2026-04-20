@@ -103,22 +103,7 @@ def require_admin(f):
 # ══════════════════════════════════════════════════════════
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.route("/auth/register", methods=["POST"])
-def register():
-    data  = request.json or {}
-    email = data.get("email","").lower().strip()
-    pw    = data.get("password","")
-    name  = data.get("display_name", email.split("@")[0])
-    if not email or not pw: return jsonify({"error":"Email và mật khẩu là bắt buộc"}),400
-    conn  = get_db()
-    exist = conn.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
-    if exist: return jsonify({"error":"Email đã tồn tại"}),409
-    conn.execute("INSERT INTO users(email,password,display_name,role) VALUES(?,?,?,?)",
-                 (email, hash_pw(pw), name, "user"))
-    conn.commit(); conn.close()
-    return jsonify({"message":"Đăng ký thành công"})
-
-@auth_bp.route("/auth/login", methods=["POST"])
+auth_bp.route("/auth/login", methods=["POST"])
 def login():
     data  = request.json or {}
     email = data.get("email","").lower().strip()
@@ -149,7 +134,7 @@ def login():
         "display_name":user["display_name"],"role":user["role"]
     }})
 
-@auth_bp.route("/auth/logout", methods=["POST"])
+auth_bp.route("/auth/logout", methods=["POST"])
 @require_auth
 def logout():
     token = request.headers.get("Authorization","").replace("Bearer ","").strip()
@@ -165,7 +150,7 @@ def logout():
 # ══════════════════════════════════════════════════════════
 sensors_bp = Blueprint("sensors", __name__)
 
-@sensors_bp.route("/latest")
+sensors_bp.route("/latest")
 def latest():
     room  = request.args.get("room")
     limit = int(request.args.get("limit", 50))
@@ -179,7 +164,7 @@ def latest():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@sensors_bp.route("/history")
+sensors_bp.route("/history")
 def history():
     room  = request.args.get("room")
     type_ = request.args.get("type")
@@ -193,7 +178,7 @@ def history():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@sensors_bp.route("/dashboard")
+sensors_bp.route("/dashboard")
 def dashboard():
     room = request.args.get("room")
     conn = get_db()
@@ -208,7 +193,7 @@ def dashboard():
     conn.close()
     return jsonify({"room":room,"sensors":sensors,"devices":devices,"alerts":alerts,"timestamp":int(time.time())})
 
-@sensors_bp.route("/chart")
+sensors_bp.route("/chart")
 def chart():
     room  = request.args.get("room")
     type_ = request.args.get("type")
@@ -222,7 +207,7 @@ def chart():
     conn.close()
     return jsonify({"room":room,"type":type_,"data":[dict(r) for r in rows]})
 
-@sensors_bp.route("/rooms")
+sensors_bp.route("/rooms")
 def rooms():
     conn  = get_db()
     rooms = [r["id"] for r in conn.execute("SELECT id FROM rooms ORDER BY id").fetchall()]
@@ -235,7 +220,7 @@ def rooms():
 # ══════════════════════════════════════════════════════════
 devices_bp = Blueprint("devices", __name__)
 
-@devices_bp.route("/device_status")
+devices_bp.route("/device_status")
 def device_status():
     room = request.args.get("room")
     conn = get_db()
@@ -244,7 +229,7 @@ def device_status():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@devices_bp.route("/control", methods=["POST"])
+devices_bp.route("/control", methods=["POST"])
 @require_auth
 def control():
     data      = request.json or {}
@@ -267,14 +252,14 @@ def control():
 # ══════════════════════════════════════════════════════════
 automation_bp = Blueprint("automation", __name__)
 
-@automation_bp.route("/automations", methods=["GET"])
+automation_bp.route("/automations", methods=["GET"])
 def get_automations():
     conn = get_db()
     rows = conn.execute("SELECT * FROM automations").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@automation_bp.route("/automations", methods=["POST"])
+automation_bp.route("/automations", methods=["POST"])
 @require_auth
 def upsert_automation():
     data    = request.json or {}
@@ -290,7 +275,7 @@ def upsert_automation():
     r.publish("automation_commands", json.dumps({"action":"upsert","room_id":room_id,"rule":data}))
     return jsonify({"status":"ok"})
 
-@automation_bp.route("/automations/<room_id>", methods=["DELETE"])
+automation_bp.route("/automations/<room_id>", methods=["DELETE"])
 @require_auth
 def del_automation(room_id):
     conn = get_db()
@@ -299,7 +284,7 @@ def del_automation(room_id):
     r.publish("automation_commands", json.dumps({"action":"delete","room_id":room_id}))
     return jsonify({"status":"ok"})
 
-@automation_bp.route("/schedules", methods=["GET"])
+automation_bp.route("/schedules", methods=["GET"])
 def get_schedules():
     room = request.args.get("room")
     conn = get_db()
@@ -308,7 +293,7 @@ def get_schedules():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@automation_bp.route("/schedules", methods=["POST"])
+automation_bp.route("/schedules", methods=["POST"])
 @require_auth
 def add_schedule():
     data = request.json or {}
@@ -319,7 +304,7 @@ def add_schedule():
     r.publish("schedule_commands", json.dumps({"action":"reload"}))
     return jsonify({"status":"ok"})
 
-@automation_bp.route("/schedules/<int:sid>", methods=["DELETE"])
+automation_bp.route("/schedules/<int:sid>", methods=["DELETE"])
 @require_auth
 def del_schedule(sid):
     conn = get_db()
@@ -342,7 +327,7 @@ def _date_filter(col):
     if date_to:   clauses.append(f"{col}<=?"); params.append(date_to+" 23:59:59")
     return clauses, params
 
-@logs_bp.route("/logs/feed")
+logs_bp.route("/logs/feed")
 @require_auth
 def logs_feed():
     log_type = request.args.get("type","all")
@@ -468,7 +453,7 @@ def logs_feed():
     result.sort(key=lambda x: x.get("timestamp") or "", reverse=True)
     return jsonify({"total":len(result),"limit":limit,"offset":offset,"items":result[:limit]})
 
-@logs_bp.route("/alerts")
+logs_bp.route("/alerts")
 def get_alerts():
     room  = request.args.get("room")
     limit = int(request.args.get("limit",20))
@@ -478,7 +463,7 @@ def get_alerts():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@logs_bp.route("/alerts/<int:aid>/resolve", methods=["POST"])
+logs_bp.route("/alerts/<int:aid>/resolve", methods=["POST"])
 @require_auth
 def resolve_alert(aid):
     conn = get_db()
@@ -490,7 +475,7 @@ def resolve_alert(aid):
     r.publish("alert_commands", json.dumps({"action":"mute","room_id":row["room"]}))
     return jsonify({"status":"ok"})
 
-@logs_bp.route("/notifications")
+logs_bp.route("/notifications")
 @require_auth
 def get_notifications():
     limit  = int(request.args.get("limit",20))
@@ -502,7 +487,7 @@ def get_notifications():
     conn.close()
     return jsonify({"items":[dict(r) for r in rows],"unread_count":count})
 
-@logs_bp.route("/notifications/read_all", methods=["POST"])
+logs_bp.route("/notifications/read_all", methods=["POST"])
 @require_auth
 def read_all():
     conn = get_db()
@@ -510,7 +495,7 @@ def read_all():
     conn.commit(); conn.close()
     return jsonify({"status":"ok"})
 
-@logs_bp.route("/access_logs")
+logs_bp.route("/access_logs")
 @require_auth
 def access_logs():
     room  = request.args.get("room")
@@ -521,7 +506,7 @@ def access_logs():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@logs_bp.route("/login_logs")
+logs_bp.route("/login_logs")
 @require_auth
 def login_logs():
     limit  = min(int(request.args.get("limit",50)),500)
@@ -539,7 +524,7 @@ def login_logs():
 # ══════════════════════════════════════════════════════════
 rfid_bp = Blueprint("rfid", __name__)
 
-@rfid_bp.route("/rfid_cards")
+rfid_bp.route("/rfid_cards")
 @require_auth
 def get_rfid():
     conn = get_db()
@@ -547,7 +532,7 @@ def get_rfid():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@rfid_bp.route("/rfid_cards", methods=["POST"])
+rfid_bp.route("/rfid_cards", methods=["POST"])
 @require_auth
 def add_rfid():
     data = request.json or {}
@@ -560,7 +545,7 @@ def add_rfid():
     r.publish("rfid_commands", json.dumps({"action":"add","uid":uid,"owner_name":data.get("owner_name","")}))
     return jsonify({"status":"ok"})
 
-@rfid_bp.route("/rfid_cards/<uid>", methods=["DELETE"])
+rfid_bp.route("/rfid_cards/<uid>", methods=["DELETE"])
 @require_auth
 def del_rfid(uid):
     conn = get_db()
@@ -569,7 +554,7 @@ def del_rfid(uid):
     r.publish("rfid_commands", json.dumps({"action":"delete","uid":uid}))
     return jsonify({"status":"ok"})
 
-@rfid_bp.route("/rfid/enroll", methods=["POST"])
+rfid_bp.route("/rfid/enroll", methods=["POST"])
 @require_auth
 def rfid_enroll():
     data = request.json or {}
@@ -584,25 +569,25 @@ def rfid_enroll():
 # ══════════════════════════════════════════════════════════
 wifi_bp = Blueprint("wifi", __name__)
 
-@wifi_bp.route("/wifi/status")
+wifi_bp.route("/wifi/status")
 def wifi_status():
     raw = r.get("system_status:wifi")
     return jsonify(json.loads(raw) if raw else {"status":"unknown","ssid":"N/A"})
 
-@wifi_bp.route("/wifi/scan", methods=["POST"])
+wifi_bp.route("/wifi/scan", methods=["POST"])
 @require_auth
 def wifi_scan():
     r.set("wifi_scan_status","scanning")
     r.publish("wifi_scan_trigger","1")
     return jsonify({"status":"scanning_started"})
 
-@wifi_bp.route("/wifi/scan_result")
+wifi_bp.route("/wifi/scan_result")
 def wifi_scan_result():
     status  = r.get("wifi_scan_status") or "idle"
     result_ = r.get("wifi_scan_result")
     return jsonify({"status":status,"networks":json.loads(result_) if result_ else []})
 
-@wifi_bp.route("/wifi/connect", methods=["POST"])
+wifi_bp.route("/wifi/connect", methods=["POST"])
 @require_auth
 def wifi_connect():
     data    = request.json or {}
@@ -624,7 +609,7 @@ def wifi_connect():
 # ══════════════════════════════════════════════════════════
 ota_bp = Blueprint("ota", __name__)
 
-@ota_bp.route("/ota/upload", methods=["POST"])
+ota_bp.route("/ota/upload", methods=["POST"])
 @require_admin
 def ota_upload():
     if "file" not in request.files: return jsonify({"error":"no file"}),400
@@ -633,7 +618,7 @@ def ota_upload():
     f.save(os.path.join(UPLOAD_FOLDER, filename))
     return jsonify({"status":"uploaded","filename":filename})
 
-@ota_bp.route("/ota/update", methods=["POST"])
+ota_bp.route("/ota/update", methods=["POST"])
 @require_admin
 def ota_trigger():
     data     = request.json or {}
@@ -657,11 +642,7 @@ def serve_firmware(filename):
 # ══════════════════════════════════════════════════════════
 system_bp = Blueprint("system", __name__)
 
-@system_bp.route("/health")
-def health():
-    return jsonify({"status": "ok", "timestamp": datetime.utcnow().isoformat()})
-
-@system_bp.route("/sd2/status")
+system_bp.route("/sd2/status")
 def sd2_status():
     mount = "/mnt/sd2"
     is_ok = os.path.ismount(mount)
@@ -675,7 +656,7 @@ def sd2_status():
             db_sz = round(os.path.getsize(db_p)/1024, 1)
     return jsonify({"mounted":is_ok,"backup_db_size_kb":db_sz,"recent_exports":files})
 
-@system_bp.route("/data")
+system_bp.route("/data")
 def daily_data():
     date_param  = request.args.get("date", "")
     dates_param = request.args.get("dates", "")
@@ -716,7 +697,7 @@ def daily_data():
     result.sort(key=lambda x: x.get("timestamp") or "")
     return jsonify({"items": result, "count": len(result), "dates": requested_dates})
 
-@system_bp.route("/sd2/export_now", methods=["POST"])
+system_bp.route("/sd2/export_now", methods=["POST"])
 @require_auth
 def sd2_export():
     r.publish("log_commands", json.dumps({
@@ -724,7 +705,7 @@ def sd2_export():
     }))
     return jsonify({"status":"processing"})
 
-@system_bp.route("/system/clock")
+system_bp.route("/system/clock")
 def system_clock():
     """Trả về giờ hệ thống (đã sync DS3231) để Web hiển thị đồng hồ."""
     now      = datetime.now()
@@ -736,7 +717,7 @@ def system_clock():
         "warning":    None if is_valid else "Giờ hệ thống chưa đồng bộ! Kiểm tra module RTC DS3231."
     })
 
-@system_bp.route("/system/snapshots")
+system_bp.route("/system/snapshots")
 def system_snapshots():
     hours = int(request.args.get("hours",24))
     since = (datetime.now()-timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
@@ -749,7 +730,7 @@ def system_snapshots():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-@system_bp.route("/system/safety_status")
+system_bp.route("/system/safety_status")
 def safety_status():
     """Trả về danh sách phòng đang bị khoá safety (để Web hiển thị cảnh báo đỏ sau F5)."""
     keys   = r.keys("active_alert:*")

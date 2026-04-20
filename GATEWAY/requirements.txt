@@ -2,7 +2,7 @@
 # Dành cho chạy Native trên Raspberry Pi (không dùng Docker)
 
 # MQTT & Message Bus
-paho-mqtt==1.6.1
+paho-mqtt>=2.0
 redis==5.0.0
 
 # Web API & WebSocket

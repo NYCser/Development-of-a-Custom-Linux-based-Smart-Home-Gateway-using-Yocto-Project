@@ -8,10 +8,10 @@ Wants=gateway.service
 Type=simple
 User=pi
 Group=pi
-WorkingDirectory=/home/pi/GATEWAY
+WorkingDirectory=/home/pi/smarthome_prj/GATEWAY
 
 # Start cloudflared tunnel
-ExecStart=/usr/local/bin/cloudflared tunnel run smarthome-gateway
+ExecStart=/usr/local/bin/cloudflared tunnel run nhathongminh
 
 # Auto-restart on failure
 Restart=always

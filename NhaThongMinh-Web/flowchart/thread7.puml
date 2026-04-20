@@ -1,8 +1,0 @@
-@startuml
-title Network Monitoring Flow
-
-participant "Gateway MQTT" as GW
-participant "Firebase" as FB
-
-GW -> FB : Update WiFi status (periodic)
-@enduml

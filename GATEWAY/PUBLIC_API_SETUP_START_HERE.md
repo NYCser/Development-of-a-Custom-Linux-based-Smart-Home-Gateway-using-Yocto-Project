@@ -37,7 +37,7 @@ Solution: Need port forwarding (unsafe)
 Your API:  https://api.yourdomain.com (PUBLIC)
 External users: Can access from anywhere
 Security: Cloudflare DDoS protection (no port forward)
-Frontend: https://smarthome.vercel.app (global CDN)
+Frontend: https://nhathongminhwweb.netlify.app/ (global CDN)
 ```
 
 ---
@@ -150,7 +150,7 @@ Advantages:
    ├─ Rate limiting (optional, recommended)
    └─ SSL/TLS certificates (automatic, free)
 
-4. Vercel Frontend Hosting (free tier)
+4. Netify Frontend Hosting (free tier)
    └─ Automatically deploys from GitHub
    └─ Global CDN for fast loading
    └─ Real-time deployment preview

@@ -49,6 +49,23 @@ def init_db():
     else:
         print("[MAIN] Warning: db_schema.sql not found")
 
+    # Ensure admin account
+    ensure_admin(conn)
+    conn.close()
+
+def ensure_admin(conn):
+    admin_email = "admin@smarthome.local"
+    admin_pw = "admin123"  # Change after first login
+    existing = conn.execute("SELECT id FROM users WHERE email=?", (admin_email,)).fetchone()
+    if not existing:
+        import bcrypt
+        pw_hash = bcrypt.hashpw(admin_pw.encode(), bcrypt.gensalt()).decode()
+        conn.execute(
+            "INSERT INTO users (email, password, display_name, role) VALUES (?, ?, ?, ?)",
+            (admin_email, pw_hash, "Administrator", "admin")
+        )
+        print("[AUTH] Admin account created")
+
     conn.commit()
     conn.close()
 
@@ -88,14 +105,14 @@ def start_api():
     for bp in blueprints:
         try:
             # URL ví dụ: http://192.168.1.246:5000/api/auth/login
-            app.register_blueprint(bp, url_prefix='/api')
+            app.register_blueprint(bp, url_prefix='')
             print(f"[API] Registered: {bp.name}")
         except Exception as e:
             print(f"[API] Error registering {bp.name}: {e}")
 
     port = int(os.getenv("API_PORT", 5000))
     print("=" * 55)
-    print(f"[MAIN] Gateway LIVE at: http://192.168.1.33:{port}/api")
+    print(f"[MAIN] Gateway LIVE at: http://192.168.1.33:{port}/")
     print("=" * 55)
 
     # Chạy server trên 0.0.0.0 để cho phép truy cập từ máy tính khác trong mạng

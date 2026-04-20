@@ -22,7 +22,7 @@ if [ ! -d "venv" ]; then
 fi
 
 # Activate venv
-source venv/bin/activate
+# source venv/bin/activate
 
 # Check if requirements are installed
 if ! python3 -c "import redis, paho.mqtt, flask, flask_socketio" 2>/dev/null; then
